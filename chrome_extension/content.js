@@ -43,21 +43,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         
         const track = captions.find(c => c.languageCode.includes('en')) || captions[0];
         
-        const xmlRes = await fetch(track.baseUrl);
-        const xmlText = await xmlRes.text();
-        
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-        const textNodes = xmlDoc.getElementsByTagName("text");
+        // Force YouTube to return the transcript as clean JSON instead of XML
+        const jsonUrl = track.baseUrl + "&fmt=json3";
+        const jsonRes = await fetch(jsonUrl);
+        const json = await jsonRes.json();
         
         const transcriptData = [];
-        for (let i = 0; i < textNodes.length; i++) {
-          const node = textNodes[i];
-          transcriptData.push({
-            text: node.textContent,
-            start: parseFloat(node.getAttribute("start") || 0),
-            duration: parseFloat(node.getAttribute("dur") || 0)
-          });
+        if (json.events) {
+          for (const event of json.events) {
+            if (event.segs) {
+              const text = event.segs.map(s => s.utf8).join("");
+              if (text.trim()) {
+                transcriptData.push({
+                  text: text.replace(/\n/g, ' ').trim(),
+                  start: (event.tStartMs || 0) / 1000.0,
+                  duration: (event.dDurationMs || 0) / 1000.0
+                });
+              }
+            }
+          }
+        }
+        
+        if (transcriptData.length === 0) {
+          throw new Error("Transcript was fetched but contained no readable text.");
         }
         
         sendResponse({ status: "success", transcript: transcriptData });
