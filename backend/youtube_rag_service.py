@@ -8,8 +8,7 @@ from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.messages import HumanMessage, AIMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain_classic.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
@@ -42,11 +41,10 @@ class YouTubeRAGService:
     _docs_cache = {}
 
     def __init__(self):
-        # Hot-swapped to BAAI/bge-base-en-v1.5 for state-of-the-art local 768-dim embeddings
-        self.embeddings = HuggingFaceEmbeddings(
-            model_name="BAAI/bge-base-en-v1.5",
-            model_kwargs={'device': 'cpu'},
-            encode_kwargs={'normalize_embeddings': True}
+        # Switched to Google API embeddings because Render free tier (512MB RAM) will crash trying to load local HuggingFace models
+        self.embeddings = GoogleGenerativeAIEmbeddings(
+            model="models/gemini-embedding-2",
+            google_api_key=os.getenv("GOOGLE_API_KEY")
         )
         
         self.llm = ChatGoogleGenerativeAI(
