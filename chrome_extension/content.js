@@ -29,14 +29,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
   } else if (request.action === "EXTRACT_TRANSCRIPT") {
     function extractFromLivePlayer() {
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         const messageId = "YT_TRANSCRIPT_" + Date.now();
         
         const listener = (event) => {
           if (event.source !== window) return;
           if (event.data && event.data.type === messageId) {
             window.removeEventListener("message", listener);
-            resolve(event.data.payload);
+            if (event.data.error) {
+              reject(new Error(event.data.error));
+            } else {
+              resolve(event.data.payload);
+            }
           }
         };
         window.addEventListener("message", listener);
@@ -44,16 +48,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const script = document.createElement("script");
         script.textContent = `
           try {
-            let pr = window.ytInitialPlayerResponse;
-            if (!pr && window.ytplayer && window.ytplayer.config && window.ytplayer.config.args) {
-              const args = window.ytplayer.config.args;
-              if (args.raw_player_response) pr = args.raw_player_response;
-              else if (args.player_response) pr = JSON.parse(args.player_response);
+            let pr = null;
+            const player = document.getElementById("movie_player");
+            if (player && typeof player.getPlayerResponse === 'function') {
+              pr = player.getPlayerResponse();
+            } else {
+              pr = window.ytInitialPlayerResponse;
             }
             const captions = pr?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-            window.postMessage({ type: "${messageId}", payload: captions }, "*");
+            window.postMessage({ type: "${messageId}", payload: captions || [] }, "*");
           } catch (e) {
-            window.postMessage({ type: "${messageId}", payload: null }, "*");
+            window.postMessage({ type: "${messageId}", payload: null, error: e.message }, "*");
           }
         `;
         document.documentElement.appendChild(script);
@@ -61,7 +66,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         
         setTimeout(() => {
           window.removeEventListener("message", listener);
-          resolve(null);
+          reject(new Error("Timeout waiting for live player data."));
         }, 3000);
       });
     }
@@ -69,7 +74,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     async function fetchTranscript() {
       try {
         const captions = await extractFromLivePlayer();
-        if (!captions || captions.length === 0) throw new Error("No captions found in live video memory");
+        if (!captions || captions.length === 0) throw new Error("No captions found in live video memory. This video might not have English subtitles.");
         
         const track = captions.find(c => c.languageCode.includes('en')) || captions[0];
         

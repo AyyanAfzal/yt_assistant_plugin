@@ -121,13 +121,15 @@ async function ensureTranscriptUploaded(videoId) {
         if (!tabs || !tabs[0]) return resolve(false);
         chrome.tabs.sendMessage(tabs[0].id, { action: "EXTRACT_TRANSCRIPT", videoId: videoId }, async (response) => {
           if (chrome.runtime.lastError) {
-            console.error("Content script not found:", chrome.runtime.lastError.message);
-            return resolve(false);
+            const msg = "Content script not found: " + chrome.runtime.lastError.message;
+            console.error(msg);
+            return resolve(msg);
           }
           
           if (!response || response.status !== "success") {
-            console.error("Transcript extraction failed:", response ? response.message : "Unknown error");
-            return resolve(false);
+            const errMsg = response ? response.message : "Unknown error in content script";
+            console.error("Transcript extraction failed:", errMsg);
+            return resolve(errMsg);
           }
           
           try {
@@ -140,10 +142,11 @@ async function ensureTranscriptUploaded(videoId) {
               transcriptUploadedFor = videoId;
               resolve(true);
             } else {
-              resolve(false);
+              const errText = await res.text();
+              resolve("Backend upload failed: " + errText);
             }
           } catch (e) {
-            resolve(false);
+            resolve("Network error when uploading to backend: " + e.message);
           }
         });
       });
@@ -171,8 +174,8 @@ async function handleSendQuestion() {
   const botMsgId = appendMessage("bot", loadingHTML);
 
   const uploaded = await ensureTranscriptUploaded(currentVideoId);
-  if (!uploaded) {
-    updateMessage(botMsgId, "⚠️ Error: The extension could not extract the transcript from your browser. Please REFRESH the YouTube page and try again.");
+  if (uploaded !== true) {
+    updateMessage(botMsgId, `⚠️ Error: ${uploaded}<br><br>Please REFRESH the YouTube page and try again.`);
     return;
   }
 
@@ -233,8 +236,8 @@ async function handleGenerateSummary() {
   container.innerHTML = `<p class="placeholder-text">Analyzing video transcript and building summary...</p>`;
 
   const uploaded = await ensureTranscriptUploaded(currentVideoId);
-  if (!uploaded) {
-    container.innerHTML = `<p class="placeholder-text" style="color: #ff4757;">⚠️ Error: The extension could not extract the transcript from your browser. Please REFRESH the YouTube page and try again.</p>`;
+  if (uploaded !== true) {
+    container.innerHTML = `<p class="placeholder-text" style="color: #ff4757;">⚠️ Error: ${uploaded}<br><br>Please REFRESH the YouTube page and try again.</p>`;
     return;
   }
 
