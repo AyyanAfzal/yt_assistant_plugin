@@ -43,7 +43,7 @@ class YouTubeRAGService:
     def __init__(self):
         # Switched to Google API embeddings because Render free tier (512MB RAM) will crash trying to load local HuggingFace models
         self.embeddings = GoogleGenerativeAIEmbeddings(
-            model="models/gemini-embedding-2",
+            model="models/embedding-001",
             google_api_key=os.getenv("GOOGLE_API_KEY")
         )
         
