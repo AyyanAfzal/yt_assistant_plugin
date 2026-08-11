@@ -117,41 +117,81 @@ async function ensureTranscriptUploaded(videoId) {
 
   return new Promise((resolve) => {
     if (typeof chrome !== "undefined" && chrome.tabs) {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (!tabs || !tabs[0]) return resolve(false);
-        chrome.tabs.sendMessage(tabs[0].id, { action: "EXTRACT_TRANSCRIPT", videoId: videoId }, async (response) => {
-          if (chrome.runtime.lastError) {
-            const msg = "Content script not found: " + chrome.runtime.lastError.message;
-            console.error(msg);
-            return resolve(msg);
-          }
-          
-          if (!response || response.status !== "success") {
-            const errMsg = response ? response.message : "Unknown error in content script";
-            console.error("Transcript extraction failed:", errMsg);
-            return resolve(errMsg);
-          }
-          
-          try {
-            const res = await fetch(`${BACKEND_URL}/api/upload_transcript`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ video_id: videoId, transcript: response.transcript })
-            });
-            if (res.ok) {
-              transcriptUploadedFor = videoId;
-              resolve(true);
-            } else {
-              const errText = await res.text();
-              resolve("Backend upload failed: " + errText);
+      chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+        if (!tabs || !tabs[0]) return resolve("No active tab found");
+        const tab = tabs[0];
+        
+        try {
+          // 1. Get caption tracks directly from the live video player's JS memory using the MAIN world
+          const results = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            world: "MAIN",
+            func: () => {
+              let pr = null;
+              const player = document.getElementById("movie_player");
+              if (player && typeof player.getPlayerResponse === 'function') {
+                pr = player.getPlayerResponse();
+              } else {
+                pr = window.ytInitialPlayerResponse;
+              }
+              return pr?.captions?.playerCaptionsTracklistRenderer?.captionTracks || null;
             }
-          } catch (e) {
-            resolve("Network error when uploading to backend: " + e.message);
+          });
+          
+          const captions = results[0]?.result;
+          if (!captions || captions.length === 0) {
+            return resolve("No captions found in live video memory. The video might not have English subtitles.");
           }
-        });
+          
+          // 2. Find English track
+          const track = captions.find(c => c.languageCode.includes('en')) || captions[0];
+          
+          // 3. Fetch the JSON3 data directly from the popup background
+          const jsonUrl = track.baseUrl + "&fmt=json3";
+          const jsonRes = await fetch(jsonUrl);
+          const json = await jsonRes.json();
+          
+          const transcriptData = [];
+          if (json.events) {
+            for (const event of json.events) {
+              if (event.segs) {
+                const text = event.segs.map(s => s.utf8).join("");
+                if (text.trim()) {
+                  transcriptData.push({
+                    text: text.replace(/\n/g, ' ').trim(),
+                    start: (event.tStartMs || 0) / 1000.0,
+                    duration: (event.dDurationMs || 0) / 1000.0
+                  });
+                }
+              }
+            }
+          }
+          
+          if (transcriptData.length === 0) {
+            return resolve("Transcript was fetched but contained no readable text.");
+          }
+          
+          // 4. Upload to backend
+          const res = await fetch(`${BACKEND_URL}/api/upload_transcript`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ video_id: videoId, transcript: transcriptData })
+          });
+          
+          if (res.ok) {
+            transcriptUploadedFor = videoId;
+            resolve(true);
+          } else {
+            const errText = await res.text();
+            resolve("Backend upload failed: " + errText);
+          }
+          
+        } catch (e) {
+          resolve("Extraction failed: " + e.message);
+        }
       });
     } else {
-      resolve(false);
+      resolve("Chrome Extension APIs not available.");
     }
   });
 }
