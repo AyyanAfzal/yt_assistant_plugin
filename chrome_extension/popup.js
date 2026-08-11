@@ -120,6 +120,11 @@ async function ensureTranscriptUploaded(videoId) {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (!tabs || !tabs[0]) return resolve(false);
         chrome.tabs.sendMessage(tabs[0].id, { action: "EXTRACT_TRANSCRIPT", videoId: videoId }, async (response) => {
+          if (chrome.runtime.lastError) {
+            console.error("Content script not found:", chrome.runtime.lastError.message);
+            return resolve(false);
+          }
+          
           if (!response || response.status !== "success") {
             console.error("Transcript extraction failed:", response ? response.message : "Unknown error");
             return resolve(false);
