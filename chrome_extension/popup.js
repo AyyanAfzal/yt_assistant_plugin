@@ -165,7 +165,11 @@ async function handleSendQuestion() {
   const loadingHTML = `<div class="indexing-state"><div class="typing-indicator"><span></span><span></span><span></span></div> Analyzing Request...</div>`;
   const botMsgId = appendMessage("bot", loadingHTML);
 
-  await ensureTranscriptUploaded(currentVideoId);
+  const uploaded = await ensureTranscriptUploaded(currentVideoId);
+  if (!uploaded) {
+    updateMessage(botMsgId, "⚠️ Error: The extension could not extract the transcript from your browser. Please REFRESH the YouTube page and try again.");
+    return;
+  }
 
   const wsUrl = BACKEND_URL.replace("http", "ws") + "/api/stream/chat";
   const ws = new WebSocket(wsUrl);
@@ -223,7 +227,11 @@ async function handleGenerateSummary() {
 
   container.innerHTML = `<p class="placeholder-text">Analyzing video transcript and building summary...</p>`;
 
-  await ensureTranscriptUploaded(currentVideoId);
+  const uploaded = await ensureTranscriptUploaded(currentVideoId);
+  if (!uploaded) {
+    container.innerHTML = `<p class="placeholder-text" style="color: #ff4757;">⚠️ Error: The extension could not extract the transcript from your browser. Please REFRESH the YouTube page and try again.</p>`;
+    return;
+  }
 
   try {
     const res = await fetch(`${BACKEND_URL}/api/summary`, {
