@@ -118,7 +118,7 @@ async function handleSendQuestion() {
 
   if (!question) return;
   if (!currentVideoUrl) {
-    appendMessage("bot", "⚠️ Please open an active YouTube video first.");
+    appendMessage("bot", "Please open an active YouTube video first.");
     return;
   }
 
@@ -146,12 +146,12 @@ async function handleSendQuestion() {
     const data = JSON.parse(event.data);
     
     if (data.error) {
-      updateMessage(botMsgId, `❌ Error: ${data.error}`);
+      updateMessage(botMsgId, `Error: ${data.error}`);
       ws.close();
     } else if (data.status === "indexing") {
-      updateMessage(botMsgId, `<div class="indexing-state"><div class="typing-indicator"><span></span><span></span><span></span></div> ⏳ Indexing transcript (this may take a moment for long videos)...</div>`);
+      updateMessage(botMsgId, `<div class="indexing-state"><div class="typing-indicator"><span></span><span></span><span></span></div> Indexing transcript (this may take a moment for long videos)...</div>`);
     } else if (data.status === "thinking") {
-      updateMessage(botMsgId, `<div class="indexing-state"><div class="typing-indicator"><span></span><span></span><span></span></div> ⏳ Thinking...</div>`);
+      updateMessage(botMsgId, `<div class="indexing-state"><div class="typing-indicator"><span></span><span></span><span></span></div> Thinking...</div>`);
     } else if (data.chunk) {
       if (isFirstChunk) {
         fullAnswer = ""; // Clear the placeholder
@@ -169,7 +169,7 @@ async function handleSendQuestion() {
 
   ws.onerror = (err) => {
     if (isFirstChunk) {
-      updateMessage(botMsgId, `❌ Connection error. Make sure the backend is running.`);
+      updateMessage(botMsgId, `Connection error. Make sure the backend is running.`);
     }
   };
 }
@@ -178,11 +178,11 @@ async function handleSendQuestion() {
 async function handleGenerateSummary() {
   const container = document.getElementById("summary-container");
   if (!currentVideoUrl) {
-    container.innerHTML = `<p class="placeholder-text">⚠️ Please open an active YouTube video first.</p>`;
+    container.innerHTML = `<p class="placeholder-text">Please open an active YouTube video first.</p>`;
     return;
   }
 
-  container.innerHTML = `<p class="placeholder-text">⚡ Analyzing video transcript and building summary...</p>`;
+  container.innerHTML = `<p class="placeholder-text">Analyzing video transcript and building summary...</p>`;
 
   try {
     const res = await fetch(`${BACKEND_URL}/api/summary`, {
@@ -200,7 +200,7 @@ async function handleGenerateSummary() {
     container.innerHTML = formatMarkdownWithTimestamps(data.summary);
     attachTimestampListeners(container);
   } catch (err) {
-    container.innerHTML = `<p class="placeholder-text" style="color: #ff4757;">❌ Error: ${err.message}</p>`;
+    container.innerHTML = `<p class="placeholder-text" style="color: #ff4757;">Error: ${err.message}</p>`;
   }
 }
 
@@ -259,7 +259,7 @@ function formatMarkdownWithTimestamps(text) {
       totalSeconds = parts[0] * 60 + parts[1];
     }
 
-    return `<button class="timestamp-btn" data-seconds="${totalSeconds}">⏱ ${cleanMatch}</button>`;
+    return `<button class="timestamp-btn" data-seconds="${totalSeconds}">${cleanMatch}</button>`;
   });
 
   return formatted;
