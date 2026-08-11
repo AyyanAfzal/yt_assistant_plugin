@@ -1,0 +1,22 @@
+# Environments
+.env
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# AI/Agent specific
+.agents/
+EVALUATION.md
+evaluation_results.md
+
+# Cache files
+transcript_cache_*.json
+*.json
+
+# OS specific
+.DS_Store
+Thumbs.db

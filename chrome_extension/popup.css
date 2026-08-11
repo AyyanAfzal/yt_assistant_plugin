@@ -1,0 +1,482 @@
+:root {
+  /* Light Mode Backgrounds */
+  --bg-main: #ffffff;
+  --bg-card: #f8fafc;
+  --bg-input: #ffffff;
+  --bg-hover: #f1f5f9;
+  
+  /* Soft Blue Accents */
+  --accent-primary: #3b82f6; /* Tailwind Blue 500 */
+  --accent-hover: #2563eb; /* Tailwind Blue 600 */
+  --accent-light: #eff6ff; /* Tailwind Blue 50 */
+  --accent-glow: rgba(59, 130, 246, 0.2);
+  
+  /* Text */
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  
+  /* Borders & Shadows */
+  --border-light: #e2e8f0;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-float: 0 10px 25px rgba(0,0,0,0.1);
+  
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 9999px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  width: 400px;
+  height: 560px; /* Fixed height for Chrome popup */
+  margin: 0;
+  padding: 0;
+  /* Pure white background to blend with Chrome's native window */
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 6px; /* Tiny margin to allow the shadow and rounded corners to show */
+  height: calc(100% - 12px);
+  width: calc(100% - 12px);
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  border-radius: 16px; /* The rounded corners the user wants */
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  overflow: hidden; /* Prevent body scrolling and clip child elements to the radius */
+  display: flex;
+  flex-direction: column;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: var(--bg-main);
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  background: var(--bg-main);
+  border-bottom: 1px solid var(--border-light);
+  flex-shrink: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-title {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text-main);
+  letter-spacing: -0.2px;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-card);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border: 1px solid var(--border-light);
+  transition: all 0.3s ease;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #ef4444; /* Red */
+  transition: all 0.3s;
+}
+
+.status-badge.online {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.status-badge.online .status-dot {
+  background-color: #22c55e;
+}
+
+.status-badge.online .status-text {
+  color: #166534;
+}
+
+/* Video Card */
+.video-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px 20px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-light);
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.video-thumbnail-wrapper {
+  width: 72px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: #cbd5e1;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.video-thumbnail-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-meta {
+  overflow: hidden;
+}
+
+.video-meta h4 {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+  color: var(--text-main);
+}
+
+.video-id-badge {
+  font-size: 10px;
+  color: var(--accent-hover);
+  background: var(--accent-light);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+}
+
+/* Navigation Tabs */
+.nav-tabs {
+  display: flex;
+  padding: 0 16px;
+  gap: 8px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-main);
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.tab-btn:hover {
+  color: var(--text-main);
+  background: var(--bg-hover);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.tab-btn.active {
+  color: var(--accent-primary);
+  border-bottom: 2px solid var(--accent-primary);
+}
+
+/* Content Area */
+.content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Contains panels properly */
+  background: var(--bg-main);
+}
+
+.tab-panel {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden; /* Contains chat history scroll */
+}
+
+.tab-panel.active {
+  display: flex;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Chat Panel */
+.chat-history {
+  flex: 1;
+  padding: 16px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--bg-card); /* Slight contrast from body */
+}
+
+/* Scrollbar customization */
+.chat-history::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-history::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: var(--radius-pill);
+}
+.chat-history::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.welcome-message {
+  background: var(--accent-light);
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  font-size: 13px;
+  color: var(--accent-hover);
+  line-height: 1.5;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.msg {
+  display: block;
+  max-width: 85%;
+  font-size: 13px;
+  line-height: 1.5;
+  animation: slideUp 0.2s ease-out forwards;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.msg.user {
+  align-self: flex-end;
+  background: var(--accent-primary);
+  color: white;
+  padding: 10px 14px;
+  /* Beautifully rounded, absolutely NO square corners */
+  border-radius: var(--radius-xl) var(--radius-xl) 4px var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.msg.bot {
+  align-self: flex-start;
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  padding: 10px 14px;
+  border-radius: var(--radius-xl) var(--radius-xl) var(--radius-xl) 4px;
+  color: var(--text-main);
+  box-shadow: var(--shadow-sm);
+}
+
+.timestamp-btn {
+  display: inline-block;
+  background: var(--accent-light);
+  color: var(--accent-hover);
+  border: 1px solid #bfdbfe;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 0 2px;
+  transition: all 0.2s ease;
+  vertical-align: baseline;
+  line-height: 1.2;
+}
+
+.timestamp-btn:hover {
+  background: var(--accent-primary);
+  color: white;
+  border-color: var(--accent-primary);
+}
+
+/* Input Bar */
+.input-bar {
+  display: flex;
+  padding: 14px 20px;
+  gap: 10px;
+  background: var(--bg-main);
+  border-top: 1px solid var(--border-light);
+  /* The input bar wrapper now has rounded corners at the bottom to soften the extension edges */
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  flex-shrink: 0;
+}
+
+.input-bar input {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-pill);
+  padding: 10px 16px;
+  color: var(--text-main);
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.input-bar input:focus {
+  background: #ffffff;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.input-bar button {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.input-bar button:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.input-bar button svg {
+  margin-right: 2px;
+  margin-top: 2px;
+}
+
+/* Summary Panel */
+#summary-panel {
+  padding: 20px;
+  overflow-y: auto;
+  background: var(--bg-card);
+}
+
+.summary-actions {
+  margin-bottom: 20px;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-primary);
+  border: none;
+  color: white;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.summary-container {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-main);
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.summary-container ul {
+  padding-left: 20px;
+  margin-top: 10px;
+}
+
+.summary-container li {
+  margin-bottom: 8px;
+}
+
+.placeholder-text {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+/* Typing Indicator Animation */
+.typing-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--bg-light);
+  border-radius: 12px;
+}
+
+.typing-indicator span {
+  width: 6px;
+  height: 6px;
+  background-color: var(--text-muted);
+  border-radius: 50%;
+  display: inline-block;
+  animation: bounce 1.4s infinite ease-in-out both;
+}
+
+.typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+.typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+.indexing-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+}

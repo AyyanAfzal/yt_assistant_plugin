@@ -1,0 +1,17 @@
+fastapi
+uvicorn
+pydantic
+langchain
+langchain-core
+langchain-community
+langchain-classic
+langchain-google-genai
+langchain-pinecone
+pinecone-client
+google-generativeai
+yt-dlp
+webvtt-py
+youtube-transcript-api
+python-dotenv
+requests
+websockets

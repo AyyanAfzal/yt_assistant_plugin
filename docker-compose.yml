@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  yt-rag-assistant:
+    build: .
+    container_name: yt-rag-assistant-api
+    ports:
+      - "8000:8000"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_INDEX_NAME=${PINECONE_INDEX_NAME}
+    volumes:
+      - ./backend:/app/backend
+    restart: unless-stopped
