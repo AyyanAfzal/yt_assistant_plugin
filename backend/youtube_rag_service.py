@@ -39,6 +39,7 @@ def format_timestamp(seconds: float) -> str:
 
 class YouTubeRAGService:
     _docs_cache = {}
+    _indexed_videos = set()
 
     def __init__(self):
         # Switched to Google API embeddings because Render free tier (512MB RAM) will crash trying to load local HuggingFace models
@@ -218,7 +219,12 @@ class YouTubeRAGService:
         if not documents:
             raise ValueError(f"No text content found in transcript for video {video_id}")
 
-        # Check if Pinecone already has vectors for this video to avoid re-embedding
+        # 1. Fast path: If already indexed in this session, skip all checks
+        if video_id in self._indexed_videos:
+            vectorstore = PineconeVectorStore(index_name=self.pinecone_index, embedding=self.embeddings, namespace=video_id)
+            return vectorstore.as_retriever(search_kwargs={"k": 5})
+
+        # 2. Check if Pinecone already has vectors for this video to avoid re-embedding
         try:
             from pinecone import Pinecone
             pc = Pinecone(api_key=self.pinecone_api_key)
@@ -228,6 +234,7 @@ class YouTubeRAGService:
             # If the namespace exists and has vectors, skip the expensive upload phase!
             if video_id in stats.get("namespaces", {}) and stats["namespaces"][video_id].get("vector_count", 0) > 0:
                 print(f"Video {video_id} is already indexed in Pinecone! Skipping embedding phase.")
+                self._indexed_videos.add(video_id)
                 vectorstore = PineconeVectorStore(index_name=self.pinecone_index, embedding=self.embeddings, namespace=video_id)
                 return vectorstore.as_retriever(search_kwargs={"k": 5})
         except Exception as e:
@@ -244,6 +251,7 @@ class YouTubeRAGService:
             if i + batch_size < len(documents):
                 time.sleep(2)  # Prevent Gemini API rate limit
                 
+        self._indexed_videos.add(video_id)
         vectorstore = PineconeVectorStore(index_name=self.pinecone_index, embedding=self.embeddings, namespace=video_id)
         return vectorstore.as_retriever(search_kwargs={"k": 5})
 
