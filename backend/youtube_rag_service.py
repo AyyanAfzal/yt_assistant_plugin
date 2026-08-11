@@ -122,8 +122,10 @@ class YouTubeRAGService:
                         "-o", os.path.join(tmpdir, "%(id)s.%(ext)s"),
                         f"https://www.youtube.com/watch?v={video_id}"
                     ]
-                    # We run it quietly
-                    subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    # Capture stderr for better error reporting
+                    result = subprocess.run(cmd, capture_output=True, text=True)
+                    if result.returncode != 0:
+                        raise RuntimeError(f"yt-dlp command failed: {result.stderr}")
                     
                     vtt_files = [f for f in os.listdir(tmpdir) if f.endswith(".vtt")]
                     if not vtt_files:
@@ -156,7 +158,7 @@ class YouTubeRAGService:
                     return data
                     
                 except Exception as fallback_e:
-                    raise RuntimeError("No subtitles found for this video. Please try a video with closed captions enabled.")
+                    raise RuntimeError(f"No subtitles found for this video. (yt-dlp fallback failed: {str(fallback_e)} | Original API error: {str(e)})")
 
     def build_timestamp_documents(self, transcript: List[Dict[str, Any]], chunk_size: int = 1500) -> List[Document]:
         documents = []
