@@ -224,6 +224,30 @@ async function handleSendQuestion() {
 
   let fullAnswer = "";
   let isFirstChunk = true;
+  
+  let typeQueue = "";
+  let isTyping = false;
+
+  const typeWriterLoop = () => {
+    if (typeQueue.length > 0) {
+      // Append 1 to 3 characters at a time for smooth speed
+      const chars = typeQueue.substring(0, 2);
+      fullAnswer += chars;
+      typeQueue = typeQueue.substring(2);
+      
+      // Use raw innerText equivalent to prevent markdown jitter during streaming
+      const msgEl = document.getElementById(botMsgId);
+      if (msgEl) {
+        msgEl.innerText = fullAnswer + "▌";
+        const history = document.getElementById("chat-history");
+        history.scrollTop = history.scrollHeight;
+      }
+      
+      requestAnimationFrame(typeWriterLoop);
+    } else {
+      isTyping = false;
+    }
+  };
 
   ws.onopen = () => {
     ws.send(JSON.stringify({
@@ -248,14 +272,22 @@ async function handleSendQuestion() {
         fullAnswer = ""; // Clear the placeholder
         isFirstChunk = false;
       }
-      fullAnswer += data.chunk;
-      updateMessage(botMsgId, fullAnswer, false);
+      typeQueue += data.chunk;
+      if (!isTyping) {
+        isTyping = true;
+        typeWriterLoop();
+      }
     } else if (data.done) {
-      // Save to memory for follow-up questions!
-      chatHistory.push({ role: "user", content: question });
-      chatHistory.push({ role: "assistant", content: fullAnswer });
-      updateMessage(botMsgId, fullAnswer, true);
-      ws.close();
+      const finishInterval = setInterval(() => {
+        if (!isTyping) {
+          clearInterval(finishInterval);
+          // Save to memory for follow-up questions!
+          chatHistory.push({ role: "user", content: question });
+          chatHistory.push({ role: "assistant", content: fullAnswer });
+          updateMessage(botMsgId, fullAnswer, true);
+          ws.close();
+        }
+      }, 50);
     }
   };
 
