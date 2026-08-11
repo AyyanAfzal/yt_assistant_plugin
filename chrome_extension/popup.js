@@ -1,5 +1,5 @@
 // YouTube RAG Assistant Popup Logic
-const BACKEND_URL = "http://localhost:8000";
+const BACKEND_URL = "https://yt-assistant-plugin.onrender.com";
 
 let currentVideoUrl = null;
 let currentVideoId = null;
