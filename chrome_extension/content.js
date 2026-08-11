@@ -28,18 +28,48 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       duration: videoElement ? videoElement.duration : 0
     });
   } else if (request.action === "EXTRACT_TRANSCRIPT") {
+    function extractFromLivePlayer() {
+      return new Promise((resolve) => {
+        const messageId = "YT_TRANSCRIPT_" + Date.now();
+        
+        const listener = (event) => {
+          if (event.source !== window) return;
+          if (event.data && event.data.type === messageId) {
+            window.removeEventListener("message", listener);
+            resolve(event.data.payload);
+          }
+        };
+        window.addEventListener("message", listener);
+
+        const script = document.createElement("script");
+        script.textContent = `
+          try {
+            let pr = window.ytInitialPlayerResponse;
+            if (!pr && window.ytplayer && window.ytplayer.config && window.ytplayer.config.args) {
+              const args = window.ytplayer.config.args;
+              if (args.raw_player_response) pr = args.raw_player_response;
+              else if (args.player_response) pr = JSON.parse(args.player_response);
+            }
+            const captions = pr?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+            window.postMessage({ type: "${messageId}", payload: captions }, "*");
+          } catch (e) {
+            window.postMessage({ type: "${messageId}", payload: null }, "*");
+          }
+        `;
+        document.documentElement.appendChild(script);
+        script.remove();
+        
+        setTimeout(() => {
+          window.removeEventListener("message", listener);
+          resolve(null);
+        }, 3000);
+      });
+    }
+
     async function fetchTranscript() {
       try {
-        const videoId = request.videoId;
-        const res = await fetch("https://www.youtube.com/watch?v=" + videoId);
-        const html = await res.text();
-        
-        const match = html.match(/ytInitialPlayerResponse\s*=\s*({.+?})\s*;/);
-        if (!match) throw new Error("Could not find ytInitialPlayerResponse");
-        
-        const playerResponse = JSON.parse(match[1]);
-        const captions = playerResponse.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-        if (!captions || captions.length === 0) throw new Error("No captions found on video");
+        const captions = await extractFromLivePlayer();
+        if (!captions || captions.length === 0) throw new Error("No captions found in live video memory");
         
         const track = captions.find(c => c.languageCode.includes('en')) || captions[0];
         
