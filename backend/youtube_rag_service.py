@@ -111,9 +111,10 @@ class YouTubeRAGService:
                 raise RuntimeError(f"Could not retrieve transcript for video '{video_id}'. API Failed: {str(e)}")
 
             with tempfile.TemporaryDirectory() as tmpdir:
+                import sys
                 try:
                     cmd = [
-                        "yt-dlp",
+                        sys.executable, "-m", "yt_dlp",
                         "--write-auto-subs",
                         "--write-subs",
                         "--sub-langs", "en.*,hi.*",
