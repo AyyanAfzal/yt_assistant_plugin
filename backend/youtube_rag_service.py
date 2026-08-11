@@ -60,6 +60,15 @@ class YouTubeRAGService:
         self.pinecone_api_key = os.getenv("PINECONE_API_KEY")
         self.pinecone_index = os.getenv("PINECONE_INDEX_NAME")
 
+    def save_client_transcript(self, video_id: str, transcript: List[Dict[str, Any]]):
+        import json
+        cache_file = f"transcript_cache_{video_id}.json"
+        try:
+            with open(cache_file, "w", encoding="utf-8") as f:
+                json.dump(transcript, f)
+        except Exception:
+            pass
+
     def fetch_transcript(self, video_id: str) -> List[Dict[str, Any]]:
         import json
         cache_file = f"transcript_cache_{video_id}.json"

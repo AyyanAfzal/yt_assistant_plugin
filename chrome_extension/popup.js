@@ -110,6 +110,43 @@ function setupEventListeners() {
 }
 
 let chatHistory = [];
+let transcriptUploadedFor = null;
+
+async function ensureTranscriptUploaded(videoId) {
+  if (transcriptUploadedFor === videoId) return true;
+
+  return new Promise((resolve) => {
+    if (typeof chrome !== "undefined" && chrome.tabs) {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (!tabs || !tabs[0]) return resolve(false);
+        chrome.tabs.sendMessage(tabs[0].id, { action: "EXTRACT_TRANSCRIPT", videoId: videoId }, async (response) => {
+          if (!response || response.status !== "success") {
+            console.error("Transcript extraction failed:", response ? response.message : "Unknown error");
+            return resolve(false);
+          }
+          
+          try {
+            const res = await fetch(`${BACKEND_URL}/api/upload_transcript`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ video_id: videoId, transcript: response.transcript })
+            });
+            if (res.ok) {
+              transcriptUploadedFor = videoId;
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          } catch (e) {
+            resolve(false);
+          }
+        });
+      });
+    } else {
+      resolve(false);
+    }
+  });
+}
 
 // 4. Send Question to RAG Endpoint via WebSocket Streaming
 async function handleSendQuestion() {
@@ -127,6 +164,8 @@ async function handleSendQuestion() {
 
   const loadingHTML = `<div class="indexing-state"><div class="typing-indicator"><span></span><span></span><span></span></div> Analyzing Request...</div>`;
   const botMsgId = appendMessage("bot", loadingHTML);
+
+  await ensureTranscriptUploaded(currentVideoId);
 
   const wsUrl = BACKEND_URL.replace("http", "ws") + "/api/stream/chat";
   const ws = new WebSocket(wsUrl);
@@ -183,6 +222,8 @@ async function handleGenerateSummary() {
   }
 
   container.innerHTML = `<p class="placeholder-text">Analyzing video transcript and building summary...</p>`;
+
+  await ensureTranscriptUploaded(currentVideoId);
 
   try {
     const res = await fetch(`${BACKEND_URL}/api/summary`, {

@@ -57,6 +57,19 @@ class SummaryResponse(BaseModel):
     video_id: str
     summary: str
 
+class TranscriptUploadRequest(BaseModel):
+    video_id: str
+    transcript: List[dict]
+
+@app.post("/api/upload_transcript")
+def upload_transcript(req: TranscriptUploadRequest):
+    try:
+        service = get_rag_service()
+        service.save_client_transcript(req.video_id, req.transcript)
+        return {"status": "success", "message": "Transcript uploaded and cached."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/")
 def read_root():
     return {"status": "online", "message": "YouTube RAG Assistant API is running."}
