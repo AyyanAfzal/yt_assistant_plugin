@@ -112,63 +112,7 @@ class YouTubeRAGService:
             return data
             
         except Exception as e:
-            # IP Ban detected: Fallback to yt-dlp
-            import subprocess
-            import tempfile
-            try:
-                import webvtt
-            except ImportError:
-                raise RuntimeError(f"Could not retrieve transcript for video '{video_id}'. API Failed: {str(e)}")
-
-            with tempfile.TemporaryDirectory() as tmpdir:
-                import sys
-                try:
-                    cmd = [
-                        sys.executable, "-m", "yt_dlp",
-                        "--write-auto-subs",
-                        "--write-subs",
-                        "--sub-langs", "en.*,hi.*",
-                        "--skip-download",
-                        "-o", os.path.join(tmpdir, "%(id)s.%(ext)s"),
-                        f"https://www.youtube.com/watch?v={video_id}"
-                    ]
-                    # Capture stderr for better error reporting
-                    result = subprocess.run(cmd, capture_output=True, text=True)
-                    if result.returncode != 0:
-                        raise RuntimeError(f"yt-dlp command failed: {result.stderr}")
-                    
-                    vtt_files = [f for f in os.listdir(tmpdir) if f.endswith(".vtt")]
-                    if not vtt_files:
-                        raise RuntimeError("yt-dlp could not find or download any subtitles for this video.")
-                        
-                    vtt_path = os.path.join(tmpdir, vtt_files[0])
-                    
-                    data = []
-                    for caption in webvtt.read(vtt_path):
-                        # Convert HH:MM:SS.mmm to float seconds
-                        start_parts = caption.start.split(':')
-                        start_sec = sum(float(x) * 60 ** i for i, x in enumerate(reversed(start_parts)))
-                        
-                        end_parts = caption.end.split(':')
-                        end_sec = sum(float(x) * 60 ** i for i, x in enumerate(reversed(end_parts)))
-                        
-                        data.append({
-                            "text": caption.text.replace('\n', ' ').strip(),
-                            "start": start_sec,
-                            "duration": end_sec - start_sec
-                        })
-                        
-                    # Save to cache to prevent running yt-dlp again
-                    try:
-                        with open(cache_file, "w", encoding="utf-8") as f:
-                            json.dump(data, f)
-                    except Exception:
-                        pass
-                        
-                    return data
-                    
-                except Exception as fallback_e:
-                    raise RuntimeError(f"No subtitles found for this video. (yt-dlp fallback failed: {str(fallback_e)} | Original API error: {str(e)})")
+            raise RuntimeError(f"Could not retrieve transcript for video '{video_id}'. API Failed: {str(e)}")
 
     def build_timestamp_documents(self, transcript: List[Dict[str, Any]], chunk_size: int = 1500) -> List[Document]:
         documents = []
