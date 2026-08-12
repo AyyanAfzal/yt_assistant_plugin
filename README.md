@@ -43,19 +43,19 @@ The system is decoupled into a lightweight Chrome Extension frontend and a heavy
 
 ```mermaid
 graph TD
-    A[Chrome Extension UI] -->|Extracts Transcript via DOM| A
-    A -->|WebSocket: URL, Query & Transcript| B(FastAPI Server)
+    A[YouTube Video Page] -->|Native DOM Extraction| B[Chrome Extension UI]
+    B -->|WebSocket: URL, Query & JSON3 Transcript| C(FastAPI Server)
     
     subgraph "Backend RAG Pipeline"
-        B --> F[Pinecone Vector Store]
+        C --> F[Pinecone Vector Store]
         
         F -->|gemini-embedding-2| G[Google Gemini Embeddings]
         G --> H[Pinecone Retriever]
         
-        H --> J[Google Gemma/Gemini LLM]
+        H --> J[Google GenAI LLM]
     end
     
-    J -.->|Streams Chunks| A
+    J -.->|Typewriter Streaming| B
 ```
 
 ---
