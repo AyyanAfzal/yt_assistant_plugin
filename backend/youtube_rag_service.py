@@ -242,14 +242,32 @@ class YouTubeRAGService:
 
         print(f"Indexing video {video_id} to Pinecone... This may take a few minutes on CPU.")
         import time
-        batch_size = 50
+        batch_size = 25  # Reduced batch size to stay under token limits
         for i in range(0, len(documents), batch_size):
             batch = documents[i:i+batch_size]
-            PineconeVectorStore.from_documents(
-                batch, self.embeddings, index_name=self.pinecone_index, namespace=video_id
-            )
+            
+            # Robust Retry Loop for API Rate Limits
+            max_retries = 5
+            base_delay = 5
+            
+            for attempt in range(max_retries):
+                try:
+                    PineconeVectorStore.from_documents(
+                        batch, self.embeddings, index_name=self.pinecone_index, namespace=video_id
+                    )
+                    break # Success!
+                except Exception as e:
+                    if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                        if attempt == max_retries - 1:
+                            raise RuntimeError(f"Google Gemini API Rate Limit Exceeded permanently after {max_retries} attempts.")
+                        wait_time = base_delay * (2 ** attempt)
+                        print(f"Rate limit hit! Sleeping for {wait_time} seconds before retrying...")
+                        time.sleep(wait_time)
+                    else:
+                        raise e # Not a rate limit error, throw it immediately
+                        
             if i + batch_size < len(documents):
-                time.sleep(2)  # Prevent Gemini API rate limit
+                time.sleep(5)  # 5-second baseline sleep to stay strictly under 15 RPM limits
                 
         self._indexed_videos.add(video_id)
         vectorstore = PineconeVectorStore(index_name=self.pinecone_index, embedding=self.embeddings, namespace=video_id)
