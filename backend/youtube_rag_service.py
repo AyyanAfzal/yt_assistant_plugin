@@ -49,7 +49,7 @@ class YouTubeRAGService:
         )
         
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash",
+            model="gemma-4-31b-it",
             temperature=0,
             max_tokens=None,
             timeout=None,
